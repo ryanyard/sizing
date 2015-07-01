@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html ng-app="app">
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <h1><%= title %></h1>
+
+    <ng-view></ng-view>
+
+    <!-- Libraries -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular-route.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular-resource.min.js"></script>
+
+    <!-- Template -->
+    <script type="text/ng-template" id="/sizings.html">
+      Search: <input type="text" ng-model="search.name">
+      <ul>
+        <li ng-repeat="sizing in sizings | filter: search">
+          <input type="checkbox" ng-model="sizing.completed" ng-change="update($index)">
+          <a ng-show="!editing[$index]" href="#/{{sizing._id}}">{{sizing.name}}</a>
+          <button ng-show="!editing[$index]" ng-click="edit($index)">edit</button>
+          <button ng-show="!editing[$index]" ng-click="remove($index)">remove</button>
+
+          <input ng-show="editing[$index]" type="text" ng-model="sizing.name">
+          <button ng-show="editing[$index]" ng-click="update($index)">update</button>
+          <button ng-show="editing[$index]" ng-click="cancel($index)">cancel</button>
+        </li>
+      </ul>
+      New task <input type="text" ng-model="newSizing"><button ng-click="save()">Create</button>
+    </script>
+
+    <script type="text/ng-template" id="/sizingDetails.html">
+      <h1>{{ sizing.name }}</h1>
+      completed: <input type="checkbox" ng-model="sizing.completed"><br>
+      note: <textarea ng-model="sizing.note"></textarea><br><br>
+
+      <button ng-click="update()">update</button>
+      <button ng-click="remove()">remove</button>
+      <a href="/">Cancel</a>
+    </script>
+
+    <script>
+      angular.module('app', ['ngRoute', 'ngResource'])
+
+        //---------------
+        // Services
+        //---------------
+
+        .factory('Sizings', ['$resource', function($resource){
+          return $resource('/sizings/:id', null, {
+            'update': { method:'PUT' }
+          });
+        }])
+
+        //---------------
+        // Controllers
+        //---------------
+
+        .controller('SizingController', ['$scope', 'Sizings', function ($scope, Sizings) {
+          $scope.editing = [];
+          $scope.sizings = Sizings.query();
+
+          $scope.save = function(){
+            if(!$scope.newSizing || $scope.newSizing.length < 1) return;
+            var sizing = new Sizings({ name: $scope.newSizing, completed: false });
+
+            sizing.$save(function(){
+              $scope.sizings.push(sizing);
+              $scope.newSizing = ''; // clear textbox
+            });
+          }
+
+          $scope.update = function(index){
+            var sizing = $scope.sizings[index];
+            Sizings.update({id: sizing._id}, sizing);
+            $scope.editing[index] = false;
+          }
+
+          $scope.edit = function(index){
+            $scope.editing[index] = angular.copy($scope.sizings[index]);
+          }
+
+          $scope.cancel = function(index){
+            $scope.sizings[index] = angular.copy($scope.editing[index]);
+            $scope.editing[index] = false;
+          }
+
+          $scope.remove = function(index){
+            var sizing = $scope.sizings[index];
+            Sizings.remove({id: sizing._id}, function(){
+              $scope.sizings.splice(index, 1);
+            });
+          }
+        }])
+
+        .controller('SizingDetailCtrl', ['$scope', '$routeParams', 'Sizings', '$location', function ($scope, $routeParams, Sizings, $location) {
+          $scope.sizing = Sizings.get({id: $routeParams.id });
+
+          $scope.update = function(){
+            Sizings.update({id: $scope.sizing._id}, $scope.sizing, function(){
+              $location.url('/');
+            });
+          }
+
+          $scope.remove = function(){
+            Sizings.remove({id: $scope.sizing._id}, function(){
+              $location.url('/');
+            });
+          }
+        }])
+
+        //---------------
+        // Routes
+        //---------------
+
+        .config(['$routeProvider', function ($routeProvider) {
+          $routeProvider
+            .when('/', {
+              templateUrl: '/sizings.html',
+              controller: 'SizingController'
+            })
+
+            .when('/:id', {
+              templateUrl: '/sizingDetails.html',
+              controller: 'SizingDetailCtrl'
+           });
+        }]);
+    </script>
+  </body>
+</html>
