@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html ng-app="plunker">
+
+  <head>
+    <meta charset="utf-8" />
+    <title>Spreadsheet made with AngularJS</title>
+    <script>document.write('<base href="' + document.location + '" />');</script>
+    <link rel="stylesheet" href="stylesheets/sheet.css" />
+    <script data-require="angular.js@1.0.x" src="http://code.angularjs.org/1.0.7/angular.min.js" data-semver="1.0.7"></script>
+    <script src="sheet.js"></script>
+  </head>
+
+
+  <body>
+    <h1>Spreadsheet made with AngularJS</h1>
+    <p>Follows tutorial from http://thomasstreet.net/blog/spreadsheet.html</p>
+
+    <div ng-controller="sheet">
+      <table>
+        <tr class="column-label">
+          <td></td>
+          <td ng-repeat="column in columns">{{column}}</td>
+        </tr>
+        <tr ng-repeat="row in rows">
+          <td class="row-label">{{row}}</td>
+          <td ng-repeat="column in columns">
+            <div>
+              <input ng-model="cells[column+row]"></input>
+              <div ng-bind="compute(column+row)" class="output"></div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  </body>
+</html>
